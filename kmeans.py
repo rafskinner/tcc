@@ -3,6 +3,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
+import nltk
+from nltk.stem.porter import PorterStemmer
+from nltk.stem import WordNetLemmatizer
+
+from nltk.corpus import wordnet
 from sklearn.cluster import KMeans
 from sklearn.cluster import MiniBatchKMeans
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -10,9 +15,58 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from sklearn.feature_extraction import text
 
+
 data = pd.read_csv('select_no_plural.csv', sep=';', quotechar='"')
 
-general_words = ["data", "use", "using", "used", "paper", "method", "analysis", "based", "result", "problem", "furthermore"]
+wordnet_lemmatizer = WordNetLemmatizer()
+#porter_stemmer = PorterStemmer()
+
+
+def nltk2wn_tag(nltk_tag):
+  if nltk_tag.startswith('J'):
+    return wordnet.ADJ
+  elif nltk_tag.startswith('V'):
+    return wordnet.VERB
+  elif nltk_tag.startswith('N'):
+    return wordnet.NOUN
+  elif nltk_tag.startswith('R'):
+    return wordnet.ADV
+  else:          
+    return None
+
+
+def lemmatize_sentence(sentence):
+  nltk_tagged = nltk.pos_tag(nltk.word_tokenize(sentence))  
+  wn_tagged = map(lambda x: (x[0], nltk2wn_tag(x[1])), nltk_tagged)
+  res_words = []
+  for word, tag in wn_tagged:
+    if tag is None:            
+      res_words.append(word)
+    else:
+      res_words.append(wordnet_lemmatizer.lemmatize(word, tag))
+  return " ".join(res_words)
+
+
+i = 0
+for setting_value in data['setting_value']:
+    data.at[i, 'setting_value'] = lemmatize_sentence(setting_value)
+    i += 1
+
+#i = 0
+#for setting_value in data['setting_value']:
+#    words = nltk.word_tokenize(setting_value)
+#    abstract = ''
+#    for word in words:
+##        stem = porter_stemmer.stem(word)
+#        lem = wordnet_lemmatizer.lemmatize(word)
+#        abstract += lem + " "
+##        abstract += stem + " "
+#    data.at[i, 'setting_value'] = abstract.strip()
+#    i += 1
+
+general_words = ["data", "use", "using", "used", "paper", "method", "analysis",
+                 "based", "result", "problem", "furthermore", "propose",
+                 "approach", "present"]
 
 my_stop_words = text.ENGLISH_STOP_WORDS.union(general_words)
 
@@ -46,7 +100,7 @@ def find_optimal_clusters(data, max_k):
 #find_optimal_clusters(matrix, 99)
 
 #clusters = MiniBatchKMeans(n_clusters=19, init_size=1024, batch_size=2048, random_state=20).fit_predict(matrix)
-means_clusters = KMeans(n_clusters=21, random_state=20).fit_predict(matrix)
+means_clusters = KMeans(n_clusters=17, random_state=20).fit_predict(matrix)
 
 
 def plot_tsne_pca(data, labels):
@@ -82,3 +136,6 @@ def get_top_keywords(data, clusters, labels, n_terms):
             
 #get_top_keywords(matrix, clusters, tfidf.get_feature_names(), 10)
 get_top_keywords(matrix, means_clusters, tfidf.get_feature_names(), 10)
+
+print("\nClusters Size")
+print(np.bincount(means_clusters))
