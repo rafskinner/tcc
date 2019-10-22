@@ -51,36 +51,36 @@ for k in range(3, 103, 2):
     print("Clusters sizes = {}".format(cluster_size))
     
     min_sizes = sorted(i for i in cluster_size if i <= 50)
-    print("Min cluster sizes = {}".format(min_sizes))
+    print("Min cluster sizes = {}\n".format(min_sizes))
     
     if min_sizes:
         rows_removal = []
+        counts = Counter(means_clusters)
+        print("Counter occurrences = {}\n".format(counts))
+        
         for min_size in min_sizes:
-            counts = Counter(means_clusters)
-            print("Counter occurrences = {}".format(counts))
-            
             min_element = list(counts.keys())[list(counts.values()).index(min_size)]
             print("Current min_element = {}".format(min_element))
             
-            print("Removing smallest cluster elements = {} with occurrences = {}\n".format(min_element, min_size))
+            print("Removing smallest cluster elements = {} with occurrences = {}".format(min_element, min_size))
             print("Getting element indexes...")
             min_element_positions = [index for index, value in enumerate(means_clusters) if value == min_element]
             
             rows_removal.extend(min_element_positions)
             
             min_size_position = list(cluster_size).index(min_size) + 1
-            print("Extracting from cluster {} top keywords...".format(min_size_position))
+            print("Getting cluster {} size and top keywords...\n".format(min_size_position))
             top_keywords = get_top_keywords(matrix, means_clusters, tfidf.get_feature_names(), 10)
             regex = "{}(.*)".format(min_size_position)
             min_cluster_keywords = re.search(regex, top_keywords).group(1)
             
             clusters_size_keywords.append([min_size, min_cluster_keywords])
             
-        print("Being removed {} elements at once...".format(len(rows_removal)))
+        print("Being removed {} elements...".format(len(rows_removal)))
         
         print("Old data size = {}".format(data.index))
         data = data.drop(data.index[rows_removal]).reset_index(drop=True)
-        print("New data size = {}".format(data.index))
+        print("New data size = {}\n".format(data.index))
         
         break
                 
