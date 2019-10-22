@@ -1,9 +1,11 @@
 import lemmatize as lem
 import pca_tsne as pt
 
+import re
 import numpy as np
 import pandas as pd
 
+from collections import Counter
 from sklearn.cluster import KMeans
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.feature_extraction import text
@@ -11,18 +13,23 @@ from sklearn.feature_extraction import text
 
 def get_top_keywords(data, clusters, labels, n_terms):
     df = pd.DataFrame(data.todense()).groupby(clusters).mean()
+    top_keywords = ""
     
     for i,r in df.iterrows():
-        print('\nCluster {}'.format(i+1))
-        print(','.join([labels[t] for t in np.argsort(r)[-n_terms:]]))
+        top_keywords += '\nCluster {}'.format(i+1)
+        top_keywords += ','.join([labels[t] for t in np.argsort(r)[-n_terms:]])
 
+    return top_keywords
+
+
+clusters_size_keywords = []
 
 data = pd.read_csv('select_no_plural.csv', sep=';', quotechar='"')
 data = lem.perform_lemmatize_dataset(data)
 
 general_words = ["data", "use", "using", "used", "paper", "method", "analysis", "different",
                  "based", "result", "problem", "furthermore", "propose", "important", "general",
-                 "approach", "present", "aim", "work", "make", "xxxix", "rio", "grande"]
+                 "approach", "present", "aim", "work", "make", "xxxix", "rio", "grande", "nbsp"]
 
 my_stop_words = text.ENGLISH_STOP_WORDS.union(general_words)
 
@@ -33,13 +40,55 @@ tfidf = TfidfVectorizer(
     stop_words = my_stop_words
 )
 
+print("Applying TFIDF...\n")
 matrix = tfidf.fit_transform(data.setting_value)
 
-means_clusters = KMeans(n_clusters=17, random_state=20).fit_predict(matrix)
+for k in range(3, 103, 2):
+    print("Clustering with k = {}...".format(k))
+    means_clusters = KMeans(n_clusters=k, random_state=20).fit_predict(matrix)
     
-pt.plot_tsne_pca(matrix, means_clusters)
+    cluster_size = np.bincount(means_clusters)
+    print("Clusters sizes = {}".format(cluster_size))
+    
+    min_sizes = sorted(i for i in cluster_size if i <= 50)
+    print("Min cluster sizes = {}".format(min_sizes))
+    
+    if min_sizes:
+        rows_removal = []
+        for min_size in min_sizes:
+            counts = Counter(means_clusters)
+            print("Counter occurrences = {}".format(counts))
+            
+            min_element = list(counts.keys())[list(counts.values()).index(min_size)]
+            print("Current min_element = {}".format(min_element))
+            
+            print("Removing smallest cluster elements = {} with occurrences = {}\n".format(min_element, min_size))
+            print("Getting element indexes...")
+            min_element_positions = [index for index, value in enumerate(means_clusters) if value == min_element]
+            
+            rows_removal.extend(min_element_positions)
+            
+            min_size_position = list(cluster_size).index(min_size) + 1
+            print("Extracting from cluster {} top keywords...".format(min_size_position))
+            top_keywords = get_top_keywords(matrix, means_clusters, tfidf.get_feature_names(), 10)
+            regex = "{}(.*)".format(min_size_position)
+            min_cluster_keywords = re.search(regex, top_keywords).group(1)
+            
+            clusters_size_keywords.append([min_size, min_cluster_keywords])
+            
+        print("Being removed {} elements at once...".format(len(rows_removal)))
+        
+        print("Old data size = {}".format(data.index))
+        data = data.drop(data.index[rows_removal]).reset_index(drop=True)
+        print("New data size = {}".format(data.index))
+        
+        break
+                
+    print("k = {} failed\n".format(k))
 
-get_top_keywords(matrix, means_clusters, tfidf.get_feature_names(), 10)
-
-print("\nClusters Size")
-print(np.bincount(means_clusters))
+#pt.plot_tsne_pca(matrix, means_clusters)
+#
+#print(get_top_keywords(matrix, means_clusters, tfidf.get_feature_names(), 10))
+#
+#print("\nClusters Size")
+#print(np.bincount(means_clusters))
