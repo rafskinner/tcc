@@ -7,6 +7,28 @@ from collections import Counter
 from sklearn.cluster import KMeans
 
 
+def conventional_kmeans(data, tfidf, kmeans_size_keywords, k):
+    matrix = tfidf.fit_transform(data.setting_value)
+    means_clusters = KMeans(n_clusters=k, random_state=20).fit_predict(matrix)
+    
+    sizes = np.bincount(means_clusters)
+    top_keywords = kw.get_top_keywords(matrix, means_clusters, tfidf.get_feature_names(), 10)
+    
+    index = 1
+    for size in sizes:
+        regex = "{}(.*)".format(index)
+        cluster_keywords = re.search(regex, top_keywords).group(1)
+        
+        print("Cluster {}".format(index))
+        print(cluster_keywords)
+        
+        kmeans_size_keywords.append([size, cluster_keywords])
+        index += 1
+    
+    print("\nClusters Size")
+    print(sizes)
+
+
 def iteractive_kmeans(data, tfidf, clusters_size_keywords):
     while (data.size > 0):
         print("Applying TFIDF...\n")
