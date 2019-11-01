@@ -27,6 +27,8 @@ def conventional_kmeans(data, tfidf, kmeans_size_keywords, k):
     
     print("\nClusters Size")
     print(sizes)
+    
+    return means_clusters
 
 
 def iteractive_kmeans(data, tfidf, clusters_size_keywords):
@@ -69,7 +71,7 @@ def iteractive_kmeans(data, tfidf, clusters_size_keywords):
                     min_cluster_keywords = re.search(regex, top_keywords).group(1)
                     print("Top keywords are {}\n".format(min_cluster_keywords))
                     
-                    clusters_size_keywords.append([min_size, min_cluster_keywords])
+                    clusters_size_keywords.append([min_size, min_cluster_keywords, data.iloc[min_element_positions]])
                     
                 print("Being removed {} elements...".format(len(rows_removal)))
                 
