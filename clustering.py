@@ -1,4 +1,5 @@
 import keywords as kw
+import pca_tsne as pt
 
 import re
 import numpy as np
@@ -28,10 +29,12 @@ def conventional_kmeans(data, tfidf, kmeans_size_keywords, k):
     print("\nClusters Size")
     print(sizes)
     
+    pt.plot_tsne_pca(matrix, means_clusters)
+    
     return means_clusters
 
 
-def iteractive_kmeans(data, tfidf, clusters_size_keywords):
+def iteractive_kmeans(data, tfidf, clusters_size_keywords, t):
     while (data.size > 0):
         print("Applying TFIDF...\n")
         matrix = tfidf.fit_transform(data.setting_value)
@@ -43,7 +46,7 @@ def iteractive_kmeans(data, tfidf, clusters_size_keywords):
             cluster_size = np.bincount(means_clusters)
             print("Clusters sizes = {}".format(cluster_size))
             
-            min_sizes = sorted(i for i in cluster_size if i <= 50)
+            min_sizes = sorted(i for i in cluster_size if i <= t)
             print("Min cluster sizes = {}\n".format(min_sizes))
             
             if min_sizes:
