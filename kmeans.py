@@ -27,7 +27,7 @@ tfidf = TfidfVectorizer(
     stop_words = my_stop_words
 )
 
-#cl.iteractive_kmeans(data, tfidf, clusters_size_keywords, 50)
+cl.iteractive_kmeans(data, tfidf, clusters_size_keywords, 50)
 
 ### READS SAVED RESULT FROM ITERACTIVE CLUSTERIZATION SAVING TIME
 #buffered_iteractive_kmeans = open("iteractive_kmeans_data.txt").read().splitlines()

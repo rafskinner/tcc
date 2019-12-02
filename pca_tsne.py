@@ -10,7 +10,7 @@ def plot_tsne_pca(data, labels):
     max_items = np.random.choice(range(data.shape[0]), size=2702, replace=False)
     
     pca = PCA(n_components=2).fit_transform(data[max_items,:].todense())
-    tsne = TSNE().fit_transform(PCA(n_components=50).fit_transform(data[max_items,:].todense()))
+    tsne = TSNE().fit_transform(PCA(n_components=72).fit_transform(data[max_items,:].todense()))
     
     
     idx = np.random.choice(range(pca.shape[0]), size=2702, replace=False)

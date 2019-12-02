@@ -10,7 +10,16 @@ from sklearn.cluster import KMeans
 
 def conventional_kmeans(data, tfidf, kmeans_size_keywords, k):
     matrix = tfidf.fit_transform(data.setting_value)
-    means_clusters = KMeans(n_clusters=k, random_state=20).fit_predict(matrix)
+    fit = KMeans(n_clusters=k, random_state=20).fit(matrix)
+    means_clusters = fit.predict(matrix)
+    distances = fit.transform(matrix)
+    
+    sse = 0
+    i = 0
+    for cluster in means_clusters:
+        sse = sse + distances[i][cluster]
+        i = i + 1
+    print("\nSSE = {}".format(sse))
     
     sizes = np.bincount(means_clusters)
     top_keywords = kw.get_top_keywords(matrix, means_clusters, tfidf.get_feature_names(), 10)
@@ -35,18 +44,24 @@ def conventional_kmeans(data, tfidf, kmeans_size_keywords, k):
 
 
 def iteractive_kmeans(data, tfidf, clusters_size_keywords, t):
+    sse = 0
+
     while (data.size > 0):
         print("Applying TFIDF...\n")
         matrix = tfidf.fit_transform(data.setting_value)
         
-        for k in range(1, 101, 2):
+        k = 1
+        found = False
+        while (found == False):
             print("Clustering with k = {}...".format(k))
-            means_clusters = KMeans(n_clusters=k, random_state=20).fit_predict(matrix)
+            fit = KMeans(n_clusters=k, random_state=20).fit(matrix)
+            means_clusters = fit.predict(matrix)
+            distances = fit.transform(matrix)
             
             cluster_size = np.bincount(means_clusters)
             print("Clusters sizes = {}".format(cluster_size))
             
-            min_sizes = sorted(i for i in cluster_size if i <= t)
+            min_sizes = sorted(i for i in cluster_size if i <= 50)
             print("Min cluster sizes = {}\n".format(min_sizes))
             
             if min_sizes:
@@ -82,6 +97,12 @@ def iteractive_kmeans(data, tfidf, clusters_size_keywords, t):
                 data = data.drop(data.index[rows_removal]).reset_index(drop=True)
                 print("New data size = {}\n".format(data.index))
                 
-                break
-                        
-            print("k = {} failed\n".format(k))
+                for position in rows_removal:
+                    print("Adding sse of element {} of cluster {}".format(position, means_clusters[position]))
+                    sse = sse + distances[position][means_clusters[position]]
+                print("Current sse = {}".format(sse))
+                
+                found = True
+            else:    
+                print("k = {} failed\n".format(k))
+                k = k + 2
