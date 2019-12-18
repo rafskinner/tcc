@@ -1,6 +1,7 @@
 import keywords as kw
 import pca_tsne as pt
 
+import math
 import re
 import numpy as np
 
@@ -20,6 +21,14 @@ def conventional_kmeans(data, tfidf, kmeans_size_keywords, k):
         sse = sse + distances[i][cluster]
         i = i + 1
     print("\nSSE = {}".format(sse))
+    
+    ssd = 0
+    i = 0
+    for cluster in means_clusters:
+        ssd = ssd + math.pow(distances[i][cluster] - (sse/2702), 2)
+        i = i + 1
+    ssd = math.sqrt(ssd/2702)
+    print("\nSSD = {}".format(ssd))
     
     sizes = np.bincount(means_clusters)
     top_keywords = kw.get_top_keywords(matrix, means_clusters, tfidf.get_feature_names(), 10)
@@ -45,6 +54,7 @@ def conventional_kmeans(data, tfidf, kmeans_size_keywords, k):
 
 def iteractive_kmeans(data, tfidf, clusters_size_keywords, t):
     sse = 0
+    dists_array = []
 
     while (data.size > 0):
         print("Applying TFIDF...\n")
@@ -100,9 +110,16 @@ def iteractive_kmeans(data, tfidf, clusters_size_keywords, t):
                 for position in rows_removal:
                     print("Adding sse of element {} of cluster {}".format(position, means_clusters[position]))
                     sse = sse + distances[position][means_clusters[position]]
+                    dists_array.append(distances[position][means_clusters[position]])
                 print("Current sse = {}".format(sse))
                 
                 found = True
             else:    
                 print("k = {} failed\n".format(k))
                 k = k + 2
+                
+    ssd = 0
+    for dist in dists_array:
+        ssd = ssd + math.pow(dist - (sse/2702),2)
+    ssd = math.sqrt(ssd/2702)
+    print("Total ssd = {}".format(ssd))
